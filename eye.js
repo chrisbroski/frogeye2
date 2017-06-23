@@ -1,9 +1,12 @@
 /*jslint node: true */
 
+/*
+Initialize frogye.js and connect to viewer via socket.io
+*/
 var http = require("http");
 var fs = require("fs");
-var server = http.createServer(app);
-var io = require('socket.io')(server);
+var server;
+var io;
 var port = 3789;
 var Senses = require('./Senses.js');
 var senses = new Senses(64, 48, !!process.argv[2]);
@@ -17,6 +20,9 @@ function app(req, rsp) {
         fs.createReadStream(__dirname + '/viewer.html').pipe(rsp);
     }
 }
+
+server = http.createServer(app);
+io = require('socket.io')(server);
 
 function sendSenseData() {
     setInterval(function () {
