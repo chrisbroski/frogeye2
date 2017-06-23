@@ -17,6 +17,9 @@ function isEdge(ii, visionWidth, imgPixelSize, luma) {
     var val = luma[ii], compare, difference = 50;
     // check top, right, bottom, and left for a significant increase in luma
 
+    // if luma 50, perist previous
+    // Wait, what luma? the center, adjacent, an average?
+
     // Top
     if (ii > visionWidth) {
         compare = luma[ii - visionWidth];
@@ -105,28 +108,6 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
         "moveLocation": normalize(motionLoc, len / 12),
         "edges": contrast
     };
-}
-
-function targetColorLocation(chroma, len) {
-    var ii,
-        hue,
-        sat,
-        colorDistance,
-        smallestColorDistance = 0.03,
-        ball = -1;
-
-    for (ii = 0; ii < len; ii += 1) {
-        hue = uvToHue(chroma.U[ii], chroma.V[ii]);
-        sat = uvToSat(chroma.U[ii], chroma.V[ii]);
-
-        colorDistance = isTargetColor(hue, sat, 0.8, 0.35);
-        if (colorDistance < smallestColorDistance) {
-            smallestColorDistance = colorDistance;
-            ball = ii;
-        }
-    }
-
-    return ball;
 }
 
 function frogeye(luma, chroma, imgPixelSize, visionWidth, changeAmount) {
