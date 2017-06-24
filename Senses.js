@@ -44,7 +44,7 @@ function Senses(visionWidth, visionHeight, virtual) {
 
     // *Perceivers* process raw sense state into meaningful information
     perceivers.frogEye = function (imgPixelSize) {
-        var frogView = frogeye(state.raw.luma, state.raw.chroma, imgPixelSize, visionWidth, 20);
+        var frogView = frogeye(state.raw.luma, imgPixelSize, visionWidth, 20);
         state.perceptions.brightnessOverall = frogView.brightness;
         state.perceptions.motionLocation = frogView.moveLocation;
         state.perceptions.edges = frogView.edges;

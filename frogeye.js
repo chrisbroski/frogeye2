@@ -1,4 +1,6 @@
 /*jslint node: true, sloppy: true */
+var previous = {};
+previous.edges = [];
 
 function motionLocation(ii, visionWidth, imgPixelSize) {
     var topPos = Math.floor(ii / imgPixelSize * 3),
@@ -13,74 +15,41 @@ function normalize(intArray, max) {
     });
 }
 
-function isEdge(ii, visionWidth, imgPixelSize, luma) {
-    var val = luma[ii], compare, difference = 50;
-    // check top, right, bottom, and left for a significant increase in luma
+function isEdge(ii, visionWidth, imgPixelSize, luma, difference, threshold) {
+    var adjacent = [];
 
-    // if luma 50, perist previous
-    // Wait, what luma? the center, adjacent, an average?
-
-    // Top
     if (ii > visionWidth) {
-        compare = luma[ii - visionWidth];
-        if (compare - val > difference) {
-            return true;
-        }
+        adjacent.push(luma[ii - visionWidth]); // top
     }
-
-    // Bottom
-    if (ii < imgPixelSize - visionWidth) {
-        compare = luma[ii + visionWidth];
-        if (compare - val > difference) {
-            return true;
-        }
-    }
-
-    // Left
-    if (ii % visionWidth > 0) {
-        compare = luma[ii - 1];
-        if (compare - val > difference) {
-            return true;
-        }
-    }
-
-    // Right
     if (ii % visionWidth < visionWidth - 1) {
-        compare = luma[ii + 1];
-        if (compare - val > difference) {
-            return true;
-        }
+        adjacent.push(luma[ii + 1]); // right
     }
-}
-
-function isTargetColor(hue, sat, targetHue, targetSat) {
-    return Math.abs(hue - targetHue) + Math.abs(sat - targetSat) / 2;
-}
-
-// Tried to adapt this: http://www.quasimondo.com/archives/000696.php
-function uvToHue(u, v) {
-    // This is close, but I am not 100% certain it is absolutely correct.
-
-    // First, get u and v into the -1.0 to 1.0 range for some trig.
-    var angle,
-        normalU = (-2 * u / 255) + 1.0,
-        normalV = (2 * v / 255) - 1.0;
-
-    // atan2 is a super useful trig function to get an angle -pi to pi
-    angle = Math.atan2(normalV, normalU);
-    if (angle < 0) {
-        angle = Math.PI * 2 + angle;
+    if (ii < imgPixelSize - visionWidth) {
+        adjacent.push(luma[ii + visionWidth]); // bottom
+    }
+    if (ii % visionWidth > 0) {
+        adjacent.push(luma[ii - 1]); // left
     }
 
-    // Then normalize the value to a range of 0.0 - 1.0
-    return angle / (Math.PI * 2);
-}
+    // if all adjacent luma < threshold, perist previous
+    function isAllAdjacentBelowDiff() {
+        return adjacent.every(function (adj) {
+            return adj < threshold;
+        });
+    }
+    if (isAllAdjacentBelowDiff()) {
+        return (previous.edges.indexOf(ii) > -1);
+    }
 
-function uvToSat(u, v) {
-    var normalU = (2 * u / 255) - 1.0,
-        normalV = (2 * v / 255) - 1.0;
+    // If previous is true, decrease difference by, say 10%? (until jitter stops)
+    if (previous.edges.indexOf(ii) > -1) {
+        difference = difference * 0.9;
+    }
 
-    return Math.sqrt(normalU * normalU + normalV * normalV);
+    // check adjacent for a significant increase in luma
+    return adjacent.some(function (compare) {
+        return (compare - luma[ii] > difference);
+    });
 }
 
 function lumaProcess(luma, len, visionWidth, changeAmount) {
@@ -92,7 +61,7 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
 
     for (ii = 0; ii < len; ii += 1) {
         brightness += luma.current[ii];
-        if (isEdge(ii, visionWidth, len, luma.current)) {
+        if (isEdge(ii, visionWidth, len, luma.current, 50, 20)) {
             contrast.push(ii);
         }
         if (luma.previous.length) {
@@ -102,6 +71,7 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
             }
         }
     }
+    previous.edges = contrast;
 
     return {
         "brightness": brightness / len / 256,
@@ -110,15 +80,13 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
     };
 }
 
-function frogeye(luma, chroma, imgPixelSize, visionWidth, changeAmount) {
-    var bwData = lumaProcess(luma, imgPixelSize, visionWidth, changeAmount);
+function frogeye(luma, imgPixelSize, visionWidth, changeAmount) {
+    var retina = lumaProcess(luma, imgPixelSize, visionWidth, changeAmount);
 
     return {
-        "brightness": bwData.brightness,
-        "moveLocation": bwData.moveLocation,
-        "edges": bwData.edges//,
-        //"centerColor": centerColor(chroma),
-        //"ball": targetColorLocation(chroma, imgPixelSize / 4)
+        "brightness": retina.brightness,
+        "moveLocation": retina.moveLocation,
+        "edges": retina.edges
     };
 }
 
