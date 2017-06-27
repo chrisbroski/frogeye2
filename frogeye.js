@@ -1,6 +1,10 @@
 /*jslint node: true, sloppy: true */
-var previous = {};
-previous.edges = [];
+var state = {
+    edge: {
+        previous: [],
+        current: []
+    }
+};
 
 function motionLocation(ii, visionWidth, imgPixelSize) {
     var topPos = Math.floor(ii / imgPixelSize * 3),
@@ -17,6 +21,7 @@ function normalize(intArray, max) {
 
 function isEdge(ii, visionWidth, imgPixelSize, luma, difference, threshold) {
     var adjacent = [];
+    var edge;
 
     if (ii > visionWidth) {
         adjacent.push(luma[ii - visionWidth]); // top
@@ -32,27 +37,28 @@ function isEdge(ii, visionWidth, imgPixelSize, luma, difference, threshold) {
     }
 
     // if all adjacent luma < threshold, perist previous
-    function isAllAdjacentBelowDiff() {
+    /*function isAllAdjacentBelowDiff() {
         return adjacent.every(function (adj) {
             return adj < threshold;
         });
     }
     if (isAllAdjacentBelowDiff()) {
         return (previous.edges.indexOf(ii) > -1);
-    }
+    }*/
 
     // If previous is true, decrease difference by, say 10%? (until jitter stops)
-    if (previous.edges.indexOf(ii) > -1) {
-        difference = difference * 0.9;
+    edge = luma[ii] * difference;
+    if (state.edge.previous.indexOf(ii) > -1) {
+        edge = edge * 0.9;
     }
 
     // check adjacent for a significant increase in luma
     return adjacent.some(function (compare) {
-        return (compare - luma[ii] > difference);
+        return (compare > edge);
     });
 }
 
-function lumaProcess(luma, len, visionWidth, changeAmount) {
+function frogeye(luma, len, visionWidth, changeAmount) {
     var ii,
         diff,
         brightness = 0,
@@ -61,7 +67,7 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
 
     for (ii = 0; ii < len; ii += 1) {
         brightness += luma.current[ii];
-        if (isEdge(ii, visionWidth, len, luma.current, 50, 20)) {
+        if (isEdge(ii, visionWidth, len, luma.current, 2.0, 20)) {
             contrast.push(ii);
         }
         if (luma.previous.length) {
@@ -71,22 +77,12 @@ function lumaProcess(luma, len, visionWidth, changeAmount) {
             }
         }
     }
-    previous.edges = contrast;
+    state.edge.previous = contrast;
 
     return {
         "brightness": brightness / len / 256,
         "moveLocation": normalize(motionLoc, len / 12),
         "edges": contrast
-    };
-}
-
-function frogeye(luma, imgPixelSize, visionWidth, changeAmount) {
-    var retina = lumaProcess(luma, imgPixelSize, visionWidth, changeAmount);
-
-    return {
-        "brightness": retina.brightness,
-        "moveLocation": retina.moveLocation,
-        "edges": retina.edges
     };
 }
 
