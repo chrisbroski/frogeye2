@@ -8,8 +8,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "node eye.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "node index.js 1"
   },
   "repository": {
     "type": "git",

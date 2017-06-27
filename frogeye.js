@@ -66,22 +66,22 @@ function frogeye(luma, len, visionWidth, changeAmount) {
         contrast = [];
 
     for (ii = 0; ii < len; ii += 1) {
-        brightness += luma.current[ii];
-        if (isEdge(ii, visionWidth, len, luma.current, 2.0, 20)) {
+        brightness += luma[ii];
+        if (isEdge(ii, visionWidth, len, luma, 2.0, 20)) {
             contrast.push(ii);
         }
-        if (luma.previous.length) {
+        /*if (luma.previous.length) {
             diff = Math.abs(luma.previous[ii] - luma.current[ii]);
             if (diff > changeAmount) {
                 motionLoc[motionLocation(ii, visionWidth, len)] += 1;
             }
-        }
+        }*/
     }
     state.edge.previous = contrast;
 
     return {
         "brightness": brightness / len / 256,
-        "moveLocation": normalize(motionLoc, len / 12),
+        "moveLocation": motionLoc,//normalize(motionLoc, len / 12),
         "edges": contrast
     };
 }
