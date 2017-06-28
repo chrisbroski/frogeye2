@@ -15,9 +15,7 @@ var frogeye = require("./frogeye.js");
 //var senses = new Senses(64, 48, !!process.argv[2]);
 var visionWidth = 64;
 var visionHeight = 48;
-var imgPixelSize = visionWidth * visionHeight;
 var partialImgData = '';
-var imgRawFileSize = imgPixelSize * 1.5;
 var virt_timer;
 
 function app(req, rsp) {
@@ -80,13 +78,12 @@ function virt(i, imgRawFileSize, imgPixelSize) {
 
 io.on('connection', function (socket) {
     console.log('Frogeye viewer client connected');
-
-    if (virt_timer) {
-        clearTimeout(virt_timer);
-    }
-    virt(1, imgRawFileSize, imgPixelSize);
+    virt(1, visionWidth * visionHeight * 1.5, visionWidth * visionHeight);
 
     socket.on('disconnect', function () {
+        if (virt_timer) {
+            clearTimeout(virt_timer);
+        }
         console.log('Frogeye viewer client disconnected');
     });
 });
