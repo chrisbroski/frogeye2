@@ -77,7 +77,8 @@ function frogeye(luma, len, visionWidth, changeAmount) {
             }
         }*/
     }
-    state.edge.previous = contrast;
+    state.edge.previous = state.edge.current;
+    state.edge.current = contrast;
 
     return {
         "brightness": brightness / len / 256,
